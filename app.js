@@ -1,53 +1,12 @@
-// Đăng nhập (két token) + văn phòng 3D (Three.js) + bảng bên. Không có server: trình duyệt tự đọc GitHub.
+// Văn phòng 3D (Three.js) + bảng bên. Không server, không đăng nhập: đọc status.json công khai do runner ghi.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ago = t => { if (!t) return ''; const m = Math.max(0, Math.round((Date.now() - new Date(t)) / 60000)); return m < 60 ? `${m}p` : `${Math.floor(m / 60)}g${m % 60}p`; };
-const BLOB = 'dash.vault.v1', DAY = 86400e3;
-
-// ---------- "ghi nhớ": lưu CryptoKey KHÔNG xuất được trong IndexedDB ----------
-const idb = () => new Promise((ok, no) => { const r = indexedDB.open('dash', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
-async function kv(op, k, v) { try { const db = await idb(); return await new Promise((ok, no) => { const tx = db.transaction('kv', op === 'get' ? 'readonly' : 'readwrite'); const s = tx.objectStore('kv'); const q = op === 'get' ? s.get(k) : op === 'put' ? s.put(v, k) : s.delete(k); q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); }); } catch { return undefined; } }
-const blob = () => { try { return JSON.parse(localStorage.getItem(BLOB) || 'null'); } catch { return null; } };
-
-let token = null;
-async function tryRemembered() {
-  const b = blob(), m = await kv('get', 'remember');
-  if (!b || !m || m.exp < Date.now()) return false;
-  try { token = await Vault.openWith(b, m.key); return true; } catch { return false; }
-}
-function setupMode(on) { $('tokRow').hidden = !on; $('t').required = on; $('hint').textContent = on ? 'Lần đầu: đặt mật khẩu + dán token GitHub chỉ-đọc.' : 'Đăng nhập để vào văn phòng.'; $('go').textContent = on ? 'Tạo két & vào' : 'Vào văn phòng'; }
-$('reset').onclick = async () => { localStorage.removeItem(BLOB); await kv('del', 'remember'); setupMode(true); };
-$('logout').onclick = async () => { await kv('del', 'remember'); location.reload(); };
-$('f').onsubmit = async e => {
-  e.preventDefault(); $('err').textContent = ''; $('go').disabled = true;
-  const u = $('u').value.trim(), p = $('p').value, rem = $('r').checked;
-  try {
-    let key;
-    if (!blob()) { const t = $('t').value.trim(); if (!/^(github_pat_|ghp_)/.test(t)) throw new Error('Token không đúng dạng'); const s = await Vault.seal(u, t, p); localStorage.setItem(BLOB, JSON.stringify(s.blob)); token = t; key = s.key; }
-    else { const o = await Vault.unlock(blob(), u, p).catch(() => { throw new Error('Sai tên đăng nhập hoặc mật khẩu'); }); token = o.token; key = o.key; }
-    if (rem) await kv('put', 'remember', { key, exp: Date.now() + 30 * DAY }); else await kv('del', 'remember');
-    start();
-  } catch (x) { $('err').textContent = x.message; } finally { $('go').disabled = false; }
-};
-// #demo: dữ liệu giả để xem thử, không cần token.
+const STATUS = 'https://raw.githubusercontent.com/Cx2-Org/Runner/status/status.json';
 const DEMO = location.hash === '#demo';
-(async () => { if (DEMO || await tryRemembered()) start(); else setupMode(!blob()); })();
-function demoState() {
-  const t = new Date(Date.now() - 50 * 60e3).toISOString();
-  return State.buildState({ runs: [{ name: 'run-cluster', display_title: 'issue-12 ubuntu-latest', status: 'in_progress', run_started_at: t },
-      { name: 'run-cluster', display_title: 'issue-14 ubuntu-latest', status: 'in_progress', run_started_at: t },
-      { name: 'run-cluster', display_title: 'issue-15 windows-latest', status: 'queued' }],
-    open: [{ number: 12, title: 'D02 Mô hình dự án JSON + toán timeline', body: '- [x] a\n- [x] b\n- [ ] c', labels: [{ name: 'ci-run' }, { name: 'ci-running' }, { name: 'bot:ironman' }, { name: 'model:opus' }] },
-      { number: 14, title: 'E05 Chuỗi dịch shader → qsb', body: '- [x] a\n- [ ] b', labels: [{ name: 'ci-run' }, { name: 'ci-running' }, { name: 'bot:spiderman' }, { name: 'model:opus' }] },
-      { number: 16, title: 'D01 Hệ thiết kế QML', body: '', labels: [{ name: 'ci-run' }, { name: 'bot:queenie' }] },
-      { number: 20, title: 'E02 Compositor nền', body: 'Chờ: #12', labels: [{ name: 'ci-run' }, { name: 'bot:ironman' }] }],
-    lastComment: { 12: '✎ Task 2: đã code — toán timeline + speed curve', 14: '▶ Plan: 3 task — bọc GLSL 440 rồi qsb' },
-    closed: [{ number: 6, title: 'D00 Khung dự án, toolchain, CI', labels: [{ name: 'bot:ironman' }], closed_at: t }],
-    closedReport: { 6: 'ĐIỂM: 9/10 | TỰ TIN: 90%' } });
-}
 
 // ---------- cảnh 3D ----------
 let three = null;
@@ -121,13 +80,13 @@ function paint(s) {
   const { desks, board, leds } = three;
   s.bots.forEach(b => {
     const d = desks.find(x => x.name === b.name), j = b.jobs[0], g = d.scr.g;
-    d.busy = !!j; d.url = j ? j.url : null;
+    d.busy = !!j; d.url = null;
     g.fillStyle = '#0a0c0e'; g.fillRect(0, 0, 640, 400);
     if (j) {
       const pct = j.progress.total ? j.progress.done / j.progress.total : 0;
       g.fillStyle = '#5BE316'; g.font = '700 40px system-ui'; g.fillText(`#${j.number}`, 28, 60);
-      g.fillStyle = '#e8ffe0'; g.font = '600 32px system-ui'; wrap(g, j.title, 28, 110, 584, 40, 3);
-      g.fillStyle = '#8a8a94'; g.font = '24px system-ui'; wrap(g, j.note || '', 28, 250, 584, 30, 2);
+      g.fillStyle = '#e8ffe0'; g.font = '700 64px system-ui'; g.fillText(j.code || 'Việc', 28, 140);
+      g.fillStyle = '#8a8a94'; g.font = '30px system-ui'; g.fillText(j.phase.text, 28, 230);
       g.fillStyle = '#22252b'; g.fillRect(28, 330, 584, 18); g.fillStyle = '#5BE316'; g.fillRect(28, 330, 584 * pct, 18);
       g.fillStyle = '#cfd3da'; g.font = '22px system-ui'; g.fillText(`${j.progress.done}/${j.progress.total} task · ${j.model || ''}${j.machine ? ' · ' + j.machine.os : ''}`, 28, 382);
     } else { g.fillStyle = '#3a3d44'; g.font = '600 40px system-ui'; g.textAlign = 'center'; g.fillText('Chưa có việc', 320, 215); g.textAlign = 'left'; }
@@ -141,18 +100,38 @@ function paint(s) {
   g.fillStyle = '#cfe9c4'; g.font = '700 40px system-ui'; g.fillText('BẢNG VIỆC', 36, 62);
   [[s.machines.length, 'máy chạy'], [s.queue.ready, 'sẵn sàng'], [s.queue.blocked, 'chờ việc khác']].forEach(([n, l], i) => { g.fillStyle = '#fff'; g.font = '700 64px system-ui'; g.fillText(n, 36 + i * 300, 150); g.fillStyle = '#9db897'; g.font = '26px system-ui'; g.fillText(l, 36 + i * 300, 186); });
   g.fillStyle = '#d7ecd0'; g.font = '28px system-ui';
-  (s.queue.next.length ? s.queue.next.slice(0, 7) : [{ number: '', title: 'Trống — giao thêm bằng /giao', bot: '' }]).forEach((it, i) => wrap(g, `${it.number ? '#' + it.number + ' ' : ''}${it.title}${it.bot ? ' — ' + it.bot : ''}`, 36, 240 + i * 38, 950, 38, 1));
+  (s.queue.next.length ? s.queue.next.slice(0, 7) : [{ number: '', title: 'Trống — giao thêm bằng /giao', bot: '' }]).forEach((it, i) => wrap(g, `${it.number ? '#' + it.number + ' ' : ''}${it.code || it.title || ''}${it.bot ? ' — ' + it.bot : ''}`, 36, 240 + i * 38, 950, 38, 1));
   board.t.needsUpdate = true;
   leds.forEach((l, i) => { const m = s.machines[i]; l.userData.on = !!m; l.material.color.setHex(m ? (m.status === 'queued' ? 0xf0b54a : 0x5be316) : 0x111111); l.material.emissive = new THREE.Color(m ? (m.status === 'queued' ? 0xf0b54a : 0x5be316) : 0); l.material.emissiveIntensity = m ? 1 : 0; });
   // bảng bên
   $('staff').innerHTML = s.bots.map(b => { const j = b.jobs[0]; const p = j && j.progress.total ? Math.round(j.progress.done / j.progress.total * 100) : 0;
-    return `<div class="card"><b>${esc(b.name)}</b><span class="s">${j ? `<a href="${esc(j.url)}" target="_blank" rel="noopener">#${j.number} ${esc(j.title)}</a> · ${esc(j.phase.text)}` : 'Đang rảnh'}</span>${j ? `<div class="bar"><i style="width:${p}%"></i></div>` : ''}</div>`; }).join('');
+    return `<div class="card"><b>${esc(b.name)}</b><span class="s">${j ? `#${j.number} ${esc(j.code)} · ${esc(j.phase.text)}` : 'Đang rảnh'}</span>${j ? `<div class="bar"><i style="width:${p}%"></i></div>` : ''}</div>`; }).join('');
   $('queue').innerHTML = `<b>${s.machines.length} máy chạy · ${s.queue.ready} sẵn sàng · ${s.queue.blocked} chờ</b>` + s.machines.map(m => `<div class="s">#${m.issue ?? '?'} · ${esc(m.os)} · ${m.status === 'queued' ? 'xếp hàng' : ago(m.startedAt)}</div>`).join('');
-  $('done').innerHTML = s.done.map(d => `<tr><td><a href="${esc(d.url)}" target="_blank" rel="noopener" style="color:inherit">#${d.number}</a> ${esc(d.title)}<div class="s" style="color:var(--muted)">${esc(d.bot)} · ${ago(d.closedAt)} trước</div></td><td class="${d.score >= 8 ? 'hi' : d.score >= 6 ? 'mid' : 'lo'}">${d.score != null ? d.score + '/10' : '–'}</td><td>${d.confidence != null ? d.confidence + '%' : ''}</td></tr>`).join('') || '<tr><td>Chưa có</td></tr>';
+  $('done').innerHTML = s.done.map(d => `<tr><td>#${d.number} ${esc(d.code || '')}<div class="s" style="color:var(--muted)">${esc(d.bot)} · ${ago(d.closedAt)} trước</div></td><td class="${d.score >= 8 ? 'hi' : d.score >= 6 ? 'mid' : 'lo'}">${d.score != null ? d.score + '/10' : '–'}</td><td>${d.confidence != null ? d.confidence + '%' : ''}</td></tr>`).join('') || '<tr><td>Chưa có</td></tr>';
 }
 
 async function refresh() {
-  try { const s = DEMO ? demoState() : await Data.load(token); paint(s); $('live').className = 'dot'; $('upd').textContent = 'cập nhật ' + new Date().toLocaleTimeString('vi-VN'); }
-  catch (e) { $('live').className = 'dot off'; $('upd').textContent = e.message; if (e.auth) { await kv('del', 'remember'); setTimeout(() => location.reload(), 2500); } }
+  try { const s = DEMO ? demoState() : await (await fetch(STATUS + '?t=' + Date.now(), { cache: 'no-store' })).json(); paint(s); $('live').className = 'dot'; $('upd').textContent = 'dữ liệu lúc ' + new Date(s.at).toLocaleTimeString('vi-VN'); }
+  catch (e) { $('live').className = 'dot off'; $('upd').textContent = 'chưa đọc được trạng thái'; }
 }
-function start() { $('gate').style.display = 'none'; $('app').style.display = 'grid'; three = three || build(); refresh(); setInterval(refresh, 15000); }
+function start() { three = three || build(); refresh(); setInterval(refresh, 30000); }
+start();
+
+// #demo: dữ liệu giả để xem thử khi chưa có trạng thái thật.
+function demoState() {
+  const t = new Date(Date.now() - 50 * 60e3).toISOString();
+  const s = State.buildState({ runs: [{ name: 'run-cluster', display_title: 'issue-12 ubuntu-latest', status: 'in_progress', run_started_at: t },
+      { name: 'run-cluster', display_title: 'issue-14 ubuntu-latest', status: 'in_progress', run_started_at: t },
+      { name: 'run-cluster', display_title: 'issue-15 windows-latest', status: 'queued' }],
+    open: [{ number: 12, title: '[desktop/linux] D02 x', body: '- [x] a\n- [x] b\n- [ ] c', labels: [{ name: 'ci-run' }, { name: 'ci-running' }, { name: 'bot:ironman' }, { name: 'model:opus' }] },
+      { number: 14, title: '[desktop/linux] E05 x', body: '- [x] a\n- [ ] b', labels: [{ name: 'ci-run' }, { name: 'ci-running' }, { name: 'bot:spiderman' }, { name: 'model:opus' }] },
+      { number: 16, title: '[desktop/linux] D01 x', body: '', labels: [{ name: 'ci-run' }, { name: 'bot:queenie' }] },
+      { number: 20, title: '[desktop/linux] E02 x', body: 'Chờ: #12', labels: [{ name: 'ci-run' }, { name: 'bot:ironman' }] }],
+    lastComment: { 12: '✎ Task 2: đã code', 14: '▶ Plan: 3 task' },
+    closed: [{ number: 6, title: '[desktop/linux] D00 x', labels: [{ name: 'bot:ironman' }], closed_at: t }],
+    closedReport: { 6: 'ĐIỂM: 9/10 | TỰ TIN: 90%' } });
+  const code = t => ((/\]\s+([A-Z]{1,3}\d{1,3}[a-z]?)\b/.exec(t || '') || [])[1]) || '';
+  s.bots.forEach(b => b.jobs.forEach(j => { j.code = code(j.title); }));
+  s.queue.next.forEach(i => { i.code = code(i.title); }); s.done.forEach(d => { d.code = code(d.title); });
+  return s;
+}

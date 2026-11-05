@@ -35,11 +35,3 @@ test('dựng trạng thái văn phòng', () => {
   assert.deepStrictEqual(s.done[0], { number: 6, title: 'D00', url: undefined, closedAt: 'x', bot: 'Iron Man', score: 9, confidence: 90 });
 });
 
-const V = require('./vault');
-test('két token: đúng mật khẩu mở được, sai thì không', async () => {
-  const { blob } = await V.seal('admin', 'github_pat_ABC', '123456');
-  assert.ok(!JSON.stringify(blob).includes('github_pat_ABC'));
-  assert.strictEqual((await V.unlock(blob, 'admin', '123456')).token, 'github_pat_ABC');
-  await assert.rejects(V.unlock(blob, 'admin', '123457'));
-  await assert.rejects(V.unlock(blob, 'root', '123456'));
-});

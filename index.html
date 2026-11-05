@@ -13,7 +13,7 @@
 #gate input:focus{outline:2px solid var(--brand);outline-offset:1px}#gate .row{flex-direction:row;align-items:center;gap:8px;color:var(--fg)}
 #gate button{font:inherit;font-weight:700;background:var(--brand);color:#000;border:0;border-radius:10px;padding:11px;cursor:pointer}
 #gate .link{background:none;color:var(--muted);font-weight:400;padding:2px;font-size:12px}#gate .err{color:var(--bad);font-size:13px;min-height:1em}
-#app{display:none;height:100%;grid-template-columns:1fr 340px}
+#app{display:grid;height:100%;grid-template-columns:1fr 340px}
 #scene{position:relative;min-height:0}#scene canvas{display:block;width:100%;height:100%;touch-action:none}
 #hud{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:8px;background:rgba(14,15,17,.75);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand)}.dot.off{background:var(--bad);box-shadow:0 0 8px var(--bad)}
@@ -28,19 +28,10 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}td{padding:6px 4px;bo
 @media (max-width:860px){#app{grid-template-columns:1fr;grid-template-rows:58vh 1fr}aside{border-left:0;border-top:1px solid var(--line)}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
-<script src="state.js"></script><script src="vault.js"></script><script src="data.js"></script>
+<script src="state.js"></script>
 </head><body>
-<div id="gate"><form id="f" autocomplete="on">
-  <h1>Văn phòng đội bot</h1><p id="hint">Đăng nhập để vào văn phòng.</p>
-  <label>Tên đăng nhập<input type="text" id="u" autocomplete="username" required value="admin"></label>
-  <label>Mật khẩu<input type="password" id="p" autocomplete="current-password" required></label>
-  <label id="tokRow" hidden>Token GitHub chỉ-đọc (chỉ lưu trong máy này, đã mã hoá)<input type="password" id="t" autocomplete="off"></label>
-  <label class="row"><input type="checkbox" id="r" checked> Ghi nhớ 30 ngày trên máy này</label>
-  <div class="err" id="err"></div><button type="submit" id="go">Vào văn phòng</button>
-  <button type="button" class="link" id="reset">Đổi token / quên mật khẩu</button>
-</form></div>
 <div id="app"><div id="scene"><div id="hud"><span class="dot" id="live"></span><span id="upd">đang tải…</span></div></div>
   <aside><h2>Nhân viên</h2><div id="staff"></div><h2>Bảng việc</h2><div class="card" id="queue"></div>
-  <h2>Xong 48 giờ</h2><table id="done"></table><button class="out" id="logout">Đăng xuất</button></aside></div>
+  <h2>Xong 48 giờ</h2><table id="done"></table></aside></div>
 <script type="module" src="app.js"></script>
 </body></html>
