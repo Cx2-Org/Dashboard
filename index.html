@@ -28,10 +28,11 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}td{padding:6px 4px;bo
 @media (max-width:860px){#app{grid-template-columns:1fr;grid-template-rows:58vh 1fr}aside{border-left:0;border-top:1px solid var(--line)}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
-<script src="state.js"></script>
+<script src="state.js?v=3"></script>
 </head><body>
 <div id="app"><div id="scene"><div id="hud"><span class="dot" id="live"></span><b id="cnt">…</b><span id="upd" style="color:var(--muted)">đang tải…</span></div></div>
   <aside><h2>Nhân viên</h2><div id="staff"></div><h2>Bảng việc</h2><div class="card" id="queue"></div>
   <h2>Xong 48 giờ</h2><table id="done"></table></aside></div>
-<script type="module" src="app.js"></script>
+<script>window.addEventListener('error',e=>{const u=document.getElementById('upd');if(u)u.textContent='Lỗi: '+(e.message||'không tải được');});</script>
+<script type="module" src="app.js?v=3"></script>
 </body></html>

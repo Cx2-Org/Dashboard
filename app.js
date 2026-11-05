@@ -111,11 +111,11 @@ function paint(s) {
 }
 
 async function refresh() {
-  try { const s = DEMO ? demoState() : await (await fetch(STATUS + '?t=' + Date.now(), { cache: 'no-store' })).json(); paint(s); const ag = s.bots.reduce((n, b) => n + b.jobs.length, 0), mc = s.machines.filter(m => m.status !== 'queued').length, qd = s.machines.length - mc;
-    $('cnt').textContent = `${mc} máy đang chạy${qd ? ` (+${qd} xếp hàng)` : ''} · ${ag} agent đang làm · ` + s.bots.map(b => `${b.name.split(' ').pop()} ${b.jobs.length}`).join(' / '); $('live').className = 'dot'; $('upd').textContent = 'dữ liệu lúc ' + new Date(s.at).toLocaleTimeString('vi-VN'); }
+  try { const s = DEMO ? demoState() : await (await fetch(STATUS + '?t=' + Date.now(), { cache: 'no-store' })).json(); if (three) paint(s); const ag = s.bots.reduce((n, b) => n + b.jobs.length, 0), mc = s.machines.filter(m => m.status !== 'queued').length, qd = s.machines.length - mc;
+    $('cnt').textContent = `${mc} máy đang chạy${qd ? ` (+${qd} xếp hàng)` : ''} · ${ag} agent đang làm · ` + s.bots.map(b => `${({ 'Captain Queenie': 'Queenie', 'Iron Man': 'Iron', 'Spider Man': 'Spider' })[b.name] || b.name} ${b.jobs.length}`).join(' / '); $('live').className = 'dot'; $('upd').textContent = 'dữ liệu lúc ' + new Date(s.at).toLocaleTimeString('vi-VN'); }
   catch (e) { $('live').className = 'dot off'; $('upd').textContent = 'chưa đọc được trạng thái'; }
 }
-function start() { three = three || build(); refresh(); setInterval(refresh, 30000); }
+function start() { try { three = three || build(); } catch (e) { $('upd').textContent = 'Lỗi 3D: ' + e.message; } refresh(); setInterval(refresh, 30000); }
 start();
 
 // #demo: dữ liệu giả để xem thử khi chưa có trạng thái thật.
