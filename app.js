@@ -113,13 +113,13 @@ function build() {
   const host = $('scene'), renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; host.appendChild(renderer.domElement);
   const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x8ec9ff, 40, 140);
-  const cam = new THREE.PerspectiveCamera(45, 1, .1, 300); cam.position.set(11, 9, 15);
-  const ctl = new OrbitControls(cam, renderer.domElement); ctl.target.set(0, 3, 0); ctl.enableDamping = true;
+  const cam = new THREE.PerspectiveCamera(45, 1, .1, 300); cam.position.set(18, 14, 24);
+  const ctl = new OrbitControls(cam, renderer.domElement); ctl.target.set(0, 5, 0); ctl.enableDamping = true;
   { const c = new URLSearchParams(location.search).get('cam'); if (c) { const v = c.split(',').map(Number); cam.position.set(v[0], v[1], v[2]); ctl.target.set(v[3], v[4], v[5]); } } // ?cam=x,y,z,tx,ty,tz để chụp cận
   ctl.maxPolarAngle = Math.PI * .49; ctl.minDistance = 6; ctl.maxDistance = 70;
   const hemi = new THREE.HemisphereLight(0xdfefff, 0x1d3b52, 1); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(12, 20, 8); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14 }); scene.add(sun);
+  Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24 }); scene.add(sun);
 
   // biển
   const seaGeo = new THREE.PlaneGeometry(220, 220, 110, 110); seaGeo.rotateX(-Math.PI / 2);
@@ -127,7 +127,8 @@ function build() {
   const sea = new THREE.Mesh(seaGeo, new THREE.MeshStandardMaterial({ color: 0x1e88c7, roughness: .35, metalness: .1, flatShading: true })); sea.receiveShadow = true; scene.add(sea);
 
   // tàu
-  const ship = new THREE.Group(); scene.add(ship);
+  const SHIP = 1.7; // tàu to gấp 1.7 (mọi thứ trên boong to theo)
+  const ship = new THREE.Group(); ship.scale.setScalar(SHIP); scene.add(ship);
   const hullShape = new THREE.Shape(); hullShape.moveTo(-4.7, -1.65); hullShape.lineTo(2.6, -1.85); hullShape.quadraticCurveTo(5.1, -1.3, 6, 0); hullShape.quadraticCurveTo(5.1, 1.3, 2.6, 1.85); hullShape.lineTo(-4.7, 1.65); hullShape.quadraticCurveTo(-5.5, 0, -4.7, -1.65);
   const hullGeo = new THREE.ExtrudeGeometry(hullShape, { depth: 1.95, bevelEnabled: true, bevelThickness: .15, bevelSize: .12, bevelSegments: 3 }); hullGeo.rotateX(-Math.PI / 2);
   mesh(hullGeo, mat(0xd99a3e), 0, -.7, 0, ship);
@@ -230,7 +231,7 @@ function build() {
   const world = t => {
     marine.position.set(Math.cos(t * .03) * 30, .2 + .2 * Math.sin(t * 1.1), Math.sin(t * .03) * 30); marine.rotation.y = -t * .03 - Math.PI / 2; marine.rotation.z = .04 * Math.sin(t);
     rival.position.set(Math.cos(-t * .022 + 2) * 40, .2 + .2 * Math.sin(t * .9), Math.sin(-t * .022 + 2) * 40); rival.rotation.y = t * .022 - 2 + Math.PI / 2;
-    const a = t * .06, cx = Math.cos(a) * 14, cz = Math.sin(a) * 14, dir = new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)), side = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
+    const a = t * .06, cx = Math.cos(a) * 22, cz = Math.sin(a) * 22, dir = new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)), side = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
     segs.forEach((s, i) => { const k = i * 1.05; s.position.set(cx - dir.x * k + side.x * Math.sin(t * 1.4 - i * .45) * .6, 1.6 * Math.sin(t * 1.2 - i * .55) - .2, cz - dir.z * k + side.z * Math.sin(t * 1.4 - i * .45) * .6); });
     kHead.rotation.y = -a - Math.PI / 2; kHead.position.y += .6; jaw.rotation.z = -.25 - .25 * Math.sin(t * 3); };
 
@@ -266,11 +267,11 @@ function build() {
     flag.rotation.y = .25 * Math.sin(t * 3); wheel.rotation.x = .4 * Math.sin(t * .4);
     crew.forEach((c, i) => { if (c.jobs.length) { c.g.position.y = SPOT[c.name][1] + Math.abs(Math.sin(t * 4 + i)) * .07; c.g.userData.arms.forEach((a, k) => a.rotation.x = Math.sin(t * 6 + i + k * 3) * .6); } });
     luffy.userData.arms[1].rotation.z = 2.6 + .3 * Math.sin(t * 2);
-    iron.position.set(Math.cos(t * .35) * 9, 7 + Math.sin(t * 1.3) * .5, Math.sin(t * .35) * 9); iron.rotation.y = -t * .35; iron.rotation.z = .25;
+    iron.position.set(Math.cos(t * .35) * 15, 12 + Math.sin(t * 1.3) * .5, Math.sin(t * .35) * 15); iron.rotation.y = -t * .35; iron.rotation.z = .25;
     bossLb['Iron Man'].position.copy(iron.position).add(new THREE.Vector3(0, 2.2, 0));
     spiderRig.rotation.x = .18 * Math.sin(t * 1.2); queenie.rotation.y = Math.PI / 2 + .3 * Math.sin(t * .5);
     ship.localToWorld(stern.set(-5.3, .6, 0));
-    boats.forEach((b, i) => { if (!b.g.visible) { b.rope.visible = false; return; } const x = -8.5 - b.row * 2.2, z = b.col * 1.5, y = .25 + .22 * Math.sin(x * .22 + t * 1.1) + .14 * Math.sin(z * .31 + t * 1.5);
+    boats.forEach((b, i) => { if (!b.g.visible) { b.rope.visible = false; return; } const x = -12.5 - b.row * 2.2, z = b.col * 1.5, y = .25 + .22 * Math.sin(x * .22 + t * 1.1) + .14 * Math.sin(z * .31 + t * 1.5);
       b.g.position.set(x, y, z); b.g.rotation.z = .08 * Math.sin(t * 1.3 + i); b.rope.visible = true; b.rope.geometry.setFromPoints([stern, b.g.position.clone().add(new THREE.Vector3(.55, .2, 0))]);
       if (b.on) b.lamp.material.emissiveIntensity = 1 + .8 * Math.sin(t * 5 + i); });
     for (let i = fireworks.length - 1; i >= 0; i--) { const f = fireworks[i]; f.t += dt; const a = f.p.geometry.attributes.position;
