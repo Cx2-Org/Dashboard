@@ -1,0 +1,115 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>Máy đang chạy</title>
+<style>
+:root{--bg:#0b0c0f;--fg:#f2f3f5;--mut:#8b8f99;--brand:#5BE316;--line:#24262c;--warn:#f0b54a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#16241a,var(--bg) 60%);color:var(--fg);font:14px/1.45 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:18px 16px 6px;max-width:1500px;margin:0 auto}
+header h1{margin:0;font-size:20px}header a{color:var(--mut);text-decoration:none;font-size:13px;margin-left:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{background:#16181d;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px;color:#cfd3da}.chip b{color:#fff}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);display:inline-block}.dot.off{background:#f08a80;box-shadow:0 0 8px #f08a80}
+#upd{color:var(--mut);font-size:12px}
+main{display:flex;flex-wrap:wrap;gap:34px 30px;justify-content:center;align-items:flex-end;padding:22px 16px 60px;max-width:1500px;margin:0 auto}
+.dev{display:flex;flex-direction:column;align-items:center;gap:10px}
+.cap{font-size:12px;color:var(--mut);text-align:center}.cap b{color:#fff;font-size:13px}
+/* ---- màn hình app giả (dùng chung) ---- */
+.app{position:absolute;inset:0;background:#000;color:#fff;display:flex;flex-direction:column;overflow:hidden;font-size:11px}
+.app .top{display:flex;align-items:center;gap:6px;padding:6px 10px;font-weight:700}.app .top .logo{width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg,#a8ff6a,var(--brand))}
+.app .pv{position:relative;margin:4px 8px;border-radius:8px;flex:1;min-height:70px;overflow:hidden;background:linear-gradient(120deg,#1d3b2a,#14302f,#2b1d3b);background-size:300% 300%;animation:pan 8s ease-in-out infinite}
+.app .pv .code{position:absolute;left:10px;bottom:22px;font-size:22px;font-weight:800;letter-spacing:.5px;text-shadow:0 2px 8px #000}
+.app .pv .ph{position:absolute;left:10px;bottom:8px;color:#d6ffc4;font-size:11px}
+.app .pv .play{position:absolute;right:10px;top:8px;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 6px;font-size:10px}
+.app .bar{height:5px;background:#22252b;margin:6px 10px;border-radius:3px;overflow:hidden}.app .bar i{display:block;height:100%;background:var(--brand);transition:width .6s}
+.app .meta{display:flex;justify-content:space-between;padding:0 10px;color:#aab0ba;font-size:10px}
+.app .tl{position:relative;height:58px;margin:8px 0 6px;background:#0f1013;border-top:1px solid #1e2025;overflow:hidden}
+.app .tl .ph-line{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#fff;z-index:2}
+.app .tl .tracks{position:absolute;left:0;top:6px;display:flex;flex-direction:column;gap:4px;animation:scroll 9s linear infinite;width:200%}
+.app .tl .row{display:flex;gap:3px;height:14px}.app .tl .row i{border-radius:3px;display:block}
+.app .tools{display:flex;justify-content:space-around;padding:4px 6px 8px;color:#aab0ba;font-size:15px}
+.boot{position:absolute;inset:0;display:grid;place-items:center;background:#000;color:#666;font-size:12px;text-align:center}
+.boot .logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#a8ff6a,var(--brand));margin:0 auto 10px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pan{50%{background-position:100% 50%}}@keyframes scroll{to{transform:translateX(-50%)}}@keyframes pulse{50%{opacity:.35}}
+/* ---- iPhone ---- */
+.iphone{width:200px;height:420px;border-radius:44px;background:#1b1c1f;padding:9px;box-shadow:0 0 0 2px #3a3c42,0 30px 60px rgba(0,0,0,.6);position:relative}
+.iphone .scr{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden}
+.iphone .island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:66px;height:20px;border-radius:12px;background:#000;z-index:5}
+.iphone .sb,.droid .sb{display:flex;justify-content:space-between;padding:10px 20px 0;font-size:10px;font-weight:600}
+.iphone .home{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:80px;height:4px;border-radius:2px;background:#fff;opacity:.8;z-index:5}
+/* ---- Android ---- */
+.droid{width:196px;height:416px;border-radius:26px;background:#202226;padding:7px;box-shadow:0 0 0 2px #45484f,0 30px 60px rgba(0,0,0,.6);position:relative}
+.droid .scr{position:relative;width:100%;height:100%;border-radius:20px;overflow:hidden}
+.droid .cam{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:#000;box-shadow:0 0 0 2px #111;z-index:5}
+.droid .nav{display:flex;justify-content:space-around;padding:4px 30px 8px;color:#bbb;font-size:12px}
+/* ---- cửa sổ desktop ---- */
+.win{width:380px;height:262px;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px #3a3c42,0 30px 60px rgba(0,0,0,.6);display:flex;flex-direction:column;background:#000}
+.win .tb{height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;font-size:11.5px;color:#cfd3da;flex:none}
+.win .tb .t{flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win .body{position:relative;flex:1}
+.mac .tb{background:#2a2b30}.mac .tb i{width:11px;height:11px;border-radius:50%;display:block}
+.laptop{display:flex;flex-direction:column;align-items:center}.laptop .base{width:440px;height:12px;background:linear-gradient(#c9ccd2,#8d9097);border-radius:0 0 12px 12px;margin-top:-1px}.laptop .lid{padding:10px 10px 12px;background:#1b1c1f;border-radius:14px 14px 4px 4px;box-shadow:0 0 0 2px #3a3c42}
+.windows .tb{background:#202020;justify-content:flex-start}.windows .tb .btns{display:flex;gap:16px;color:#ddd;font-size:12px}
+.windows .task{height:22px;background:#1c1c1c;display:flex;align-items:center;justify-content:center;gap:10px;font-size:11px;color:#bbb;flex:none}
+.linux .tb{background:#303030;border-bottom:1px solid #1a1a1a}.linux .tb .x{width:16px;height:16px;border-radius:50%;background:#4a4a4a;display:grid;place-items:center;font-size:9px}
+.term{position:absolute;inset:0;background:#0d1117;color:#8fe388;font:10.5px/1.35 ui-monospace,Menlo,Consolas,monospace;padding:8px 10px;overflow:hidden;white-space:pre}
+.term .dim{color:#6b7380}.term .y{color:#f0d36b}
+.monitor{display:flex;flex-direction:column;align-items:center}.monitor .stand{width:70px;height:26px;background:linear-gradient(#3a3c42,#22242a);clip-path:polygon(25% 0,75% 0,100% 100%,0 100%)}.monitor .frame{padding:9px;background:#141518;border-radius:10px;box-shadow:0 0 0 2px #2c2e34}
+.empty{color:var(--mut);padding:60px 0;text-align:center;width:100%}
+body{overflow-x:hidden}@media (max-width:520px){main{gap:22px 12px}.dev{zoom:.74}}
+</style></head><body>
+<header><span class="dot" id="live"></span><h1>Máy đang chạy</h1><div class="chips" id="chips"></div><span id="upd">đang tải…</span><a href="./">← Tàu Sunny</a></header>
+<main id="grid"><div class="empty">đang tải…</div></main>
+<script>
+const STATUS = 'https://raw.githubusercontent.com/Cx2-Org/Runner/status/status.json';
+const DEMO = location.hash === '#demo';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const mins = t => t ? Math.max(0, Math.round((Date.now() - new Date(t)) / 60000)) : 0;
+const dur = m => m < 60 ? `${m} phút` : `${Math.floor(m / 60)}g${String(m % 60).padStart(2, '0')}`;
+const BOT = { 'Captain Queenie': ['👩‍✈️', 'Queenie'], 'Iron Man': ['🦾', 'Iron Man'], 'Spider Man': ['🕷', 'Spider-Man'] };
+const NAME = { ios: '📱 iOS', android: '🤖 Android', mac: '💻 Mac', windows: '🪟 Windows', linux: '🐧 Linux' };
+const fallback = os => /ubuntu/.test(os) ? 'linux' : /windows/.test(os) ? 'windows' : 'mac';
+const now = () => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+const tracks = seed => { const c = ['#5BE316', '#3fa9f5', '#f6b26b', '#b388ff', '#ef5350']; let r = ''; for (let k = 0; k < 3; k++) { r += '<div class="row">'; for (let i = 0; i < 14; i++) { const w = 20 + ((seed * 7 + i * 13 + k * 5) % 40); r += `<i style="width:${w}px;background:${k ? c[(i + k + seed) % 5] + '99' : '#2c3a33'};${k ? '' : 'border:1px solid #3d5a47'}"></i>`; } r += '</div>'; } return r; };
+function screen(d) {
+  if (d.queued) return `<div class="boot"><div><div class="logo"></div>Đang khởi động máy…<br>#${esc(d.issue)}</div></div>`;
+  const pct = d.total ? Math.round(d.done / d.total * 100) : 0, [ic, bn] = BOT[d.bot] || ['🤖', d.bot || ''];
+  return `<div class="app"><div class="top"><span class="logo"></span>CutCut<span style="margin-left:auto;font-weight:500;color:#aab0ba">${ic} ${esc(bn)}</span></div>
+    <div class="pv"><span class="play">● ${esc(d.model || 'claude')}</span><div class="code">${esc(d.code || '#' + d.issue)}</div><div class="ph">#${esc(d.issue)} · ${esc(d.phase || 'Đang làm')}</div></div>
+    <div class="bar"><i style="width:${Math.max(4, pct)}%"></i></div><div class="meta"><span>${d.done ?? 0}/${d.total ?? '?'} task</span><span>⏱ ${dur(d.m)}</span></div>
+    <div class="tl"><div class="ph-line"></div><div class="tracks">${tracks(d.issue % 7)}</div></div>
+    <div class="tools"><span>✂︎</span><span>♫</span><span>T</span><span>✦</span><span>◐</span></div></div>`;
+}
+const LOG = ['$ bash $TEST_CMD', '<span class="dim">-- Configuring done</span>', '[ 12%] Building CXX object core/model.cpp.o', '[ 31%] Building CXX object render/compositor.cpp.o', '[ 58%] Linking CXX executable cutcut', '<span class="y">[==========] Running 412 tests</span>', '[ RUN      ] Timeline.RippleDelete', '[       OK ] Timeline.RippleDelete (3 ms)', '[ RUN      ] TextLook.AccentColor', '[       OK ] TextLook.AccentColor (11 ms)', '<span class="y">[  PASSED  ] 412 tests.</span>'];
+function term(d) { const n = 4 + (Math.floor(Date.now() / 4000) + d.issue) % (LOG.length - 3);
+  return `<div class="term"><span class="dim">runner@${esc(d.os)}:~/vibecut$</span> <span class="y">#${esc(d.issue)} ${esc(d.code)}</span> · ${esc((BOT[d.bot] || ['', d.bot])[1])}\n${LOG.slice(0, n).join('\n')}\n<span class="dim">${esc(d.phase || '')} · ${d.done ?? 0}/${d.total ?? '?'} task · ⏱ ${dur(d.m)}</span> ▌</div>`; }
+function device(d) {
+  const cap = `<div class="cap"><b>${NAME[d.p]}</b> · #${esc(d.issue)} ${esc(d.code)}<br>${d.queued ? 'đang xếp hàng' : esc((BOT[d.bot] || ['', d.bot])[1]) + ' · ' + dur(d.m)}</div>`;
+  if (d.p === 'ios') return `<div class="dev"><div class="iphone"><div class="scr"><div class="island"></div>${screen(d).replace('<div class="app">', `<div class="app"><div class="sb"><span>${now()}</span><span>5G ▮▮▮</span></div>`)}<div class="home"></div></div></div>${cap}</div>`;
+  if (d.p === 'android') return `<div class="dev"><div class="droid"><div class="scr"><div class="cam"></div>${screen(d).replace('<div class="app">', `<div class="app"><div class="sb"><span>${now()}</span><span>▾ ▮▮▮ 92%</span></div>`).replace(/<\/div>$/, '<div class="nav"><span>◀</span><span>●</span><span>■</span></div></div>')}</div></div>${cap}</div>`;
+  const title = `CutCut — #${d.issue} ${d.code || ''}`;
+  if (d.p === 'mac') return `<div class="dev"><div class="laptop"><div class="lid"><div class="win mac"><div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="t">${esc(title)}</span><span style="width:40px"></span></div><div class="body">${screen(d)}</div></div></div><div class="base"></div></div>${cap}</div>`;
+  if (d.p === 'windows') return `<div class="dev"><div class="monitor"><div class="frame"><div class="win windows"><div class="tb"><span style="color:var(--brand)">■</span><span class="t" style="text-align:left">${esc(title)}</span><span class="btns"><span>—</span><span>☐</span><span>✕</span></span></div><div class="body">${screen(d)}</div><div class="task"><span>⊞</span><span>🔍</span><span style="color:var(--brand)">● CutCut</span><span style="margin-left:auto;padding-right:8px">${now()}</span></div></div></div><div class="stand"></div></div>${cap}</div>`;
+  return `<div class="dev"><div class="monitor"><div class="frame"><div class="win linux"><div class="tb"><span>☰</span><span class="t">${esc(title)} — Terminal</span><span class="x">✕</span></div><div class="body">${d.queued ? screen(d) : term(d)}</div></div></div><div class="stand"></div></div>${cap}</div>`;
+}
+let last = null;
+function render(s) {
+  last = s;
+  const jobs = s.bots.flatMap(b => b.jobs.map(j => ({ ...j, bot: b.name })));
+  const list = s.machines.map(m => { const j = jobs.find(x => String(x.number) === String(m.issue)) || {};
+    return { issue: m.issue, os: m.os, p: m.platform || j.platform || fallback(m.os), code: m.code || j.code || '', bot: m.bot || j.bot || '', queued: m.status === 'queued',
+      m: mins(m.startedAt), phase: j.phase && j.phase.text, done: j.progress && j.progress.done, total: j.progress && j.progress.total, model: j.model }; });
+  const order = { ios: 0, android: 1, mac: 2, windows: 3, linux: 4 }; list.sort((a, b) => order[a.p] - order[b.p] || a.issue - b.issue);
+  const cnt = {}; list.forEach(d => cnt[d.p] = (cnt[d.p] || 0) + 1);
+  document.getElementById('chips').innerHTML = `<span class="chip"><b>${list.length}</b> máy</span>` + Object.keys(NAME).filter(k => cnt[k]).map(k => `<span class="chip">${NAME[k]} <b>${cnt[k]}</b></span>`).join('');
+  document.getElementById('grid').innerHTML = list.length ? list.map(device).join('') : '<div class="empty">😴 Không máy nào đang chạy</div>';
+}
+async function refresh() {
+  try { const s = DEMO ? demo() : await (await fetch(STATUS + '?t=' + Date.now(), { cache: 'no-store' })).json(); render(s);
+    document.getElementById('live').className = 'dot'; document.getElementById('upd').textContent = 'dữ liệu lúc ' + new Date(s.at).toLocaleTimeString('vi-VN'); }
+  catch (e) { document.getElementById('live').className = 'dot off'; document.getElementById('upd').textContent = 'chưa đọc được trạng thái'; }
+}
+function demo() { const t = m => new Date(Date.now() - m * 60e3).toISOString(), j = (number, code, platform, text, done, total) => ({ number, code, platform, phase: { text }, progress: { done, total }, model: 'opus' });
+  return { at: new Date().toISOString(), bots: [{ name: 'Captain Queenie', jobs: [j(86, 'WI1', 'ios', 'Đang chạy test', 2, 3), j(175, 'Q04', 'windows', 'Đang code', 1, 3)] }, { name: 'Iron Man', jobs: [j(85, 'WA1', 'android', 'Đang chạy app', 1, 3), j(79, 'MF1', 'mac', 'Đang chạy test', 2, 3)] }, { name: 'Spider Man', jobs: [j(74, 'P02', 'linux', 'Đang code', 0, 2)] }],
+    machines: [{ issue: 86, os: 'macos-15-intel', status: 'in_progress', startedAt: t(42) }, { issue: 85, os: 'ubuntu-latest', status: 'in_progress', startedAt: t(95) }, { issue: 79, os: 'macos-15-intel', status: 'in_progress', startedAt: t(130) }, { issue: 175, os: 'windows-latest', status: 'in_progress', startedAt: t(18) }, { issue: 74, os: 'ubuntu-latest', status: 'in_progress', startedAt: t(7) }, { issue: 91, os: 'macos-15-intel', status: 'queued' }] }; }
+refresh(); setInterval(refresh, 30000); setInterval(() => last && document.querySelector('.term') && render(last), 4000); // chạy tiếp log giả, không tải lại mạng
+</script></body></html>
