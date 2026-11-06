@@ -31,44 +31,80 @@ function label(w = 2.2) {
   return sp;
 }
 
-// ---------- người chibi (mặt nhìn +z, chân ở y=0, cao ~1.3) ----------
+// ---------- người chibi kiểu anime (mặt nhìn +z, chân ở y=0, đầu to) ----------
+const H = 1.1, R = .27; // tâm đầu, bán kính đầu
+const up = new THREE.Vector3(0, 1, 0);
 function person(o) {
   const g = new THREE.Group(), skin = o.skin ?? 0xf1c9a5;
   for (const x of [-.09, .09]) mesh(new THREE.CylinderGeometry(.065, .06, .42, 10), mat(o.legs ?? o.pants ?? 0x333333), x, .21, 0, g);
+  for (const x of [-.09, .09]) mesh(new THREE.BoxGeometry(.11, .06, .18), mat(o.shoes ?? 0x3e2723), x, .03, .03, g);
   mesh(new THREE.CapsuleGeometry(.18, .24, 4, 12), mat(o.shirt ?? 0xffffff), 0, .62, 0, g);
   if (o.pants) mesh(new THREE.CylinderGeometry(.19, .2, .16, 12), mat(o.pants), 0, .44, 0, g);
   const arms = [-1, 1].map(s => { const a = mesh(new THREE.CylinderGeometry(.055, .05, .4, 8), mat(o.arms ?? o.shirt ?? skin), s * .25, .62, 0, g); a.rotation.z = s * .3; return a; });
-  const head = mesh(new THREE.SphereGeometry(.23, 20, 16), mat(o.head ?? skin), 0, 1.06, 0, g);
-  if (o.eyes !== false) for (const x of [-.08, .08]) mesh(new THREE.SphereGeometry(.03, 8, 6), mat(o.eyeColor ?? 0x111111), x, 1.08, .21, g);
-  if (o.hair != null) { const h = mesh(new THREE.SphereGeometry(.245, 18, 12, 0, Math.PI * 2, 0, Math.PI * (o.hairCap ?? .5)), mat(o.hair), 0, 1.07, -.01, g); h.rotation.x = -.15; }
+  const head = mesh(new THREE.SphereGeometry(R, 24, 18), mat(o.head ?? skin), 0, H, 0, g);
+  if (o.eyes !== false) for (const s of [-1, 1]) {
+    if ((s < 0 && o.eyeL === false) || (s > 0 && o.eyeR === false)) { mesh(new THREE.BoxGeometry(.012, .13, .01), mat(0x5d1a1a), s * .095, H + .02, R - .005, g); continue; }
+    const w = mesh(new THREE.SphereGeometry(.068, 12, 10), mat(o.eyeWhite ?? 0xffffff), s * .095, H + .02, R - .045, g); w.scale.set(.85, 1.15, .45);
+    mesh(new THREE.SphereGeometry(.036, 10, 8), mat(o.eyeColor ?? 0x111111), s * .095, H + .01, R - .01, g);
+  }
+  if (o.mouth !== false) mesh(new THREE.BoxGeometry(o.grin ? .16 : .07, o.grin ? .04 : .015, .01), mat(o.grin ? 0xffffff : 0x7a2b2b), 0, H - .13, R - .025, g);
+  if (o.hair != null) { const h = mesh(new THREE.SphereGeometry(R + .02, 20, 12, 0, Math.PI * 2, 0, Math.PI * (o.hairCap ?? .45)), mat(o.hair), 0, H + .01, -.015, g); h.rotation.x = -.18; }
   g.userData = { head, arms };
   o.extra && o.extra(g);
   if (o.scale) g.scale.setScalar(o.scale);
   return g;
 }
-const hatStraw = g => { mesh(new THREE.CylinderGeometry(.42, .42, .03, 24), mat(0xe9c46a), 0, 1.22, 0, g); mesh(new THREE.CylinderGeometry(.21, .23, .17, 20), mat(0xe9c46a), 0, 1.31, 0, g); mesh(new THREE.CylinderGeometry(.235, .235, .055, 20), mat(0xc0392b), 0, 1.26, 0, g); };
-const longHair = c => g => mesh(new THREE.BoxGeometry(.44, .62, .12), mat(c), 0, .86, -.17, g);
+// tóc chĩa: n mũi nhọn quanh đỉnh đầu
+function spikes(g, c, n = 9, len = .2, elev = .9) { for (let i = 0; i < n; i++) { const th = i / n * Math.PI * 2, dir = new THREE.Vector3(Math.sin(elev) * Math.cos(th), Math.cos(elev), Math.sin(elev) * Math.sin(th) - .25).normalize();
+  const k = mesh(new THREE.ConeGeometry(.07, len, 6), mat(c), dir.x * R, H + dir.y * R, dir.z * R, g); k.quaternion.setFromUnitVectors(up, dir); } }
+const hatStraw = g => { mesh(new THREE.CylinderGeometry(.52, .52, .03, 28), mat(0xe9c46a), 0, H + .17, 0, g); mesh(new THREE.CylinderGeometry(.26, .29, .2, 22), mat(0xe9c46a), 0, H + .28, 0, g); mesh(new THREE.CylinderGeometry(.295, .295, .065, 22), mat(0xc0392b), 0, H + .22, 0, g); };
+const longHair = (c, len = .62) => g => mesh(new THREE.BoxGeometry(.5, len, .12), mat(c), 0, H - .2 - (len - .62) / 2, -.2, g);
+const skirt = c => g => mesh(new THREE.ConeGeometry(.34, .5, 16, 1, true), mat(c, { side: THREE.DoubleSide }), 0, .38, 0, g);
 
 const CREW = [
-  { name: 'Zoro', room: '🏋️ Tháp canh', o: { shirt: 0xf2f2f2, pants: 0x2f3b2c, hair: 0x4caf50, hairCap: .42, extra: g => {
-    mesh(new THREE.CylinderGeometry(.2, .2, .12, 14), mat(0x3e7d3a), 0, .5, 0, g);
-    [0xffffff, 0x111111, 0xb71c1c].forEach((c, i) => { const s = mesh(new THREE.BoxGeometry(.035, .7, .035), mat(0x9aa0a6, { metalness: .8, roughness: .3 }), .24, .45, -.05 + i * .06, g); s.rotation.z = .9; mesh(new THREE.BoxGeometry(.05, .16, .05), mat(c), .5, .63, -.05 + i * .06, g).rotation.z = .9; }); } } },
-  { name: 'Sanji', room: '🍳 Bếp', o: { shirt: 0x1d1d22, pants: 0x1d1d22, hair: 0xf5d76e, extra: g => { mesh(new THREE.SphereGeometry(.11, 10, 8), mat(0xf5d76e), .09, 1.1, .16, g); mesh(new THREE.CylinderGeometry(.012, .012, .14, 6), mat(0xffffff), -.07, 1.0, .25, g).rotation.x = Math.PI / 2; mesh(new THREE.SphereGeometry(.015, 6, 6), glow(0xff7043), -.07, 1.0, .32, g); } } },
-  { name: 'Nami', room: '🗺 Hải đồ', o: { shirt: 0x5aa0e6, pants: 0x2d4f8a, hair: 0xf28b2c, extra: longHair(0xf28b2c) } },
-  { name: 'Usopp', room: '🎯 Kho súng', o: { skin: 0x8d5a3b, shirt: 0xc9a46b, pants: 0x6d5a3b, hair: 0x111111, hairCap: .62, extra: g => { mesh(new THREE.ConeGeometry(.04, .32, 8), mat(0x8d5a3b), 0, 1.05, .36, g).rotation.x = Math.PI / 2; } } },
-  { name: 'Franky', room: '🔧 Xưởng', o: { shirt: 0xe63946, pants: 0x1565c0, hair: 0x3fa9f5, hairCap: .35, scale: 1.12, extra: g => {
-    for (let i = -1; i <= 1; i++) { const c = mesh(new THREE.ConeGeometry(.08, .3, 6), mat(0x3fa9f5), i * .1, 1.32, 0, g); c.rotation.z = -i * .3; }
-    mesh(new THREE.BoxGeometry(.3, .07, .04), mat(0x111111, { metalness: .6 }), 0, 1.1, .21, g);
-    g.userData.arms.forEach(a => a.scale.set(1.9, 1, 1.9)); } } },
-  { name: 'Chopper', room: '🩺 Phòng y tế', o: { scale: .72, skin: 0x8b5a2b, shirt: 0x8b5a2b, legs: 0x8b5a2b, hair: null, extra: g => {
-    mesh(new THREE.SphereGeometry(.04, 8, 6), mat(0x1e88e5), 0, 1.02, .23, g);
-    mesh(new THREE.CylinderGeometry(.32, .32, .03, 20), mat(0xf48fb1), 0, 1.24, 0, g); mesh(new THREE.CylinderGeometry(.2, .2, .32, 20), mat(0xf48fb1), 0, 1.4, 0, g);
-    [1, -1].forEach(s => { mesh(new THREE.BoxGeometry(.18, .035, .01), mat(0xffffff), 0, 1.4, .2, g).rotation.z = s * .78; mesh(new THREE.CylinderGeometry(.02, .025, .22, 6), mat(0x6d4c2b), s * .26, 1.32, 0, g).rotation.z = -s * .9; }); } } },
-  { name: 'Robin', room: '📚 Thư viện', o: { shirt: 0x7b4fa0, pants: 0x3a2a4a, hair: 0x1a1a2e, extra: longHair(0x1a1a2e) } },
-  { name: 'Brook', room: '🎻 Phòng nhạc', o: { skin: 0xf5f5ef, shirt: 0x1b1b1f, pants: 0x1b1b1f, eyeColor: 0x000000, hair: null, extra: g => {
-    mesh(new THREE.SphereGeometry(.34, 16, 12), mat(0x111111), 0, 1.2, -.05, g); mesh(new THREE.CylinderGeometry(.17, .17, .3, 16), mat(0x111111), 0, 1.55, 0, g); mesh(new THREE.CylinderGeometry(.27, .27, .02, 16), mat(0x111111), 0, 1.41, 0, g);
-    mesh(new THREE.CylinderGeometry(.015, .015, .9, 6), mat(0x5d4037), .32, .45, .1, g); } } },
-  { name: 'Jinbe', room: '☸️ Bánh lái', o: { skin: 0x5c8fd6, shirt: 0xe07b39, pants: 0x3e2723, hair: 0x111111, hairCap: .35, scale: 1.2 } },
+  { name: 'Zoro', room: '🏋️ Tháp canh', o: { shirt: 0xf2f2f2, pants: 0x1b1b1b, shoes: 0x111111, hair: 0x43a047, hairCap: .32, eyeL: false, extra: g => {
+    spikes(g, 0x43a047, 11, .12, .75);
+    mesh(new THREE.CylinderGeometry(.2, .2, .13, 14), mat(0x2e7d32), 0, .5, 0, g);                                       // haramaki
+    for (let i = 0; i < 3; i++) mesh(new THREE.SphereGeometry(.018, 6, 6), mat(0xffc107, { metalness: .8 }), -R - .005, H - .06 - i * .04, -.02, g); // 3 khuyên tai
+    mesh(new THREE.CylinderGeometry(.065, .065, .08, 8), mat(0x111111), -.29, .66, 0, g);                                // khăn đen buộc tay
+    [0xffffff, 0x111111, 0xb71c1c].forEach((c, i) => { const s = mesh(new THREE.BoxGeometry(.035, .75, .035), mat(0x9aa0a6, { metalness: .8, roughness: .3 }), .24, .45, -.06 + i * .06, g); s.rotation.z = .9; mesh(new THREE.BoxGeometry(.05, .18, .05), mat(c), .52, .64, -.06 + i * .06, g).rotation.z = .9; }); } } },
+  { name: 'Sanji', room: '🍳 Bếp', o: { shirt: 0x1d1d22, pants: 0x1d1d22, shoes: 0x111111, hair: 0xf5d76e, eyeL: false, extra: g => {
+    mesh(new THREE.SphereGeometry(.15, 12, 10), mat(0xf5d76e), -.1, H + .04, R - .1, g).scale.set(1, 1.3, .6);         // mái che mắt trái
+    mesh(new THREE.TorusGeometry(.03, .008, 6, 12), mat(0x8d6e00), .1, H + .11, R - .01, g);                               // lông mày xoắn
+    mesh(new THREE.BoxGeometry(.12, .2, .02), mat(0x1e88e5), 0, .7, .18, g); mesh(new THREE.BoxGeometry(.04, .16, .02), mat(0x111111), 0, .68, .195, g); // sơ mi xanh + cà vạt
+    mesh(new THREE.CylinderGeometry(.012, .012, .16, 6), mat(0xffffff), .07, H - .13, R + .05, g).rotation.x = Math.PI / 2;
+    mesh(new THREE.SphereGeometry(.016, 6, 6), glow(0xff7043), .07, H - .13, R + .13, g);
+    for (let i = 0; i < 3; i++) mesh(new THREE.SphereGeometry(.04 + i * .02, 8, 6), new THREE.MeshBasicMaterial({ color: 0xdddddd, transparent: true, opacity: .45 - i * .1 }), .16 + i * .04, H + .05 + i * .14, R + .1, g); } } },
+  { name: 'Nami', room: '🗺 Hải đồ', o: { shirt: 0x8fc3f0, pants: 0x2d4f8a, shoes: 0xc58b3c, hair: 0xf28b2c, eyeColor: 0x6d3b0b, extra: g => {
+    longHair(0xf28b2c, .8)(g); mesh(new THREE.CylinderGeometry(.022, .022, 1, 8), mat(0x1e88e5, { metalness: .5 }), .32, .55, .12, g); } } },
+  { name: 'Usopp', room: '🎯 Kho súng', o: { skin: 0x8d5a3b, shirt: 0xd7b98e, pants: 0x6d5a3b, hair: 0x111111, hairCap: .55, grin: true, extra: g => {
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; mesh(new THREE.SphereGeometry(.09, 8, 6), mat(0x111111), Math.cos(a) * (R + .03), H + .02 + Math.abs(Math.sin(a)) * .05, Math.sin(a) * (R + .03) - .04, g); }
+    mesh(new THREE.ConeGeometry(.045, .48, 8), mat(0x8d5a3b), 0, H - .03, R + .22, g).rotation.x = Math.PI / 2;             // mũi dài
+    for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(.07, .07, .05, 12), mat(0xffc107, { metalness: .6 }), s * .1, H + .2, R - .06, g).rotation.x = 1.2; // kính bảo hộ
+    mesh(new THREE.BoxGeometry(.38, .05, .02), mat(0x7b5b3a), 0, H + .2, R - .1, g); } } },
+  { name: 'Franky', room: '🔧 Xưởng', o: { shirt: 0xe63946, pants: 0x1565c0, legs: 0xf1c9a5, hair: 0x29b6f6, hairCap: .3, scale: 1.12, extra: g => {
+    const pomp = mesh(new THREE.BoxGeometry(.26, .2, .4), mat(0x29b6f6), 0, H + .26, .08, g); pomp.rotation.x = -.5;      // tóc vuốt dựng
+    mesh(new THREE.BoxGeometry(.32, .08, .04), mat(0x111111, { metalness: .6 }), 0, H + .03, R - .01, g);               // kính đen
+    for (const s of [-1, 1]) mesh(new THREE.SphereGeometry(.02, 6, 6), mat(0xffffff), s * .1 + .04, .7, .19, g);         // hoa áo
+    g.userData.arms.forEach(a => a.scale.set(2.2, 1, 2.2)); for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(.03, .03, .01, 5), mat(0x1565c0), s * .31, .52, .1, g); } } },
+  { name: 'Chopper', room: '🩺 Phòng y tế', o: { scale: .7, skin: 0x8b5a2b, shirt: 0x8b5a2b, pants: 0x1e88e5, legs: 0x8b5a2b, hair: null, mouth: false, extra: g => {
+    mesh(new THREE.SphereGeometry(.05, 8, 6), mat(0x1e88e5), 0, H - .07, R, g);                                          // mũi xanh
+    mesh(new THREE.CylinderGeometry(.38, .38, .03, 22), mat(0xf48fb1), 0, H + .2, 0, g); const hat = mesh(new THREE.CylinderGeometry(.25, .26, .38, 22), mat(0xf48fb1), 0, H + .4, 0, g); hat.rotation.x = -.15;
+    [1, -1].forEach(s => { mesh(new THREE.BoxGeometry(.2, .04, .01), mat(0xffffff), 0, H + .4, .26, g).rotation.z = s * .78;
+      const ant = mesh(new THREE.CylinderGeometry(.022, .03, .3, 6), mat(0x6d4c2b), s * .3, H + .32, 0, g); ant.rotation.z = -s * 1.0;
+      mesh(new THREE.CylinderGeometry(.015, .02, .14, 6), mat(0x6d4c2b), s * .38, H + .44, 0, g); }); } } },
+  { name: 'Robin', room: '📚 Thư viện', o: { shirt: 0x6a3d9a, pants: 0x3a2a4a, shoes: 0x111111, hair: 0x14142a, eyeColor: 0x1a237e, extra: g => {
+    longHair(0x14142a, .85)(g); skirt(0x6a3d9a)(g); mesh(new THREE.BoxGeometry(.42, .08, .1), mat(0x14142a), 0, H + .17, R - .1, g); // tóc mái
+    for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(.06, .06, .02, 12), mat(0x222222), s * .1, H + .26, R - .12, g).rotation.x = 1.2; } } }, // kính râm cài đầu
+  { name: 'Brook', room: '🎻 Phòng nhạc', o: { skin: 0xf5f5ef, shirt: 0x1b1b1f, pants: 0x1b1b1f, shoes: 0x111111, eyeWhite: 0x111111, eyeColor: 0x111111, hair: null, mouth: false, extra: g => {
+    mesh(new THREE.BoxGeometry(.16, .05, .01), mat(0xffffff), 0, H - .14, R - .02, g); for (let i = -2; i <= 2; i++) mesh(new THREE.BoxGeometry(.005, .05, .012), mat(0x333333), i * .03, H - .14, R - .01, g); // răng
+    mesh(new THREE.SphereGeometry(.42, 18, 14), mat(0x111111), 0, H + .12, -.07, g);                                     // afro
+    mesh(new THREE.CylinderGeometry(.19, .19, .34, 18), mat(0x111111), 0, H + .62, 0, g); mesh(new THREE.CylinderGeometry(.3, .3, .02, 18), mat(0x111111), 0, H + .46, 0, g);
+    mesh(new THREE.BoxGeometry(.16, .04, .02), mat(0xffffff), 0, .86, .17, g); mesh(new THREE.CylinderGeometry(.015, .015, 1, 6), mat(0x5d4037), .34, .45, .1, g); } } },
+  { name: 'Jinbe', room: '☸️ Bánh lái', o: { skin: 0x4f83cc, shirt: 0xe07b39, pants: 0xe07b39, legs: 0x4f83cc, hair: 0x111111, hairCap: .3, scale: 1.25, extra: g => {
+    skirt(0xe07b39)(g); mesh(new THREE.CylinderGeometry(.1, .12, .12, 12), mat(0x111111), 0, H + .3, -.05, g);           // búi tóc
+    for (const s of [-1, 1]) mesh(new THREE.SphereGeometry(.035, 8, 6), mat(0xe8eef7), s * .06, H - .13, R - .01, g);   // môi cá
+    mesh(new THREE.TorusGeometry(.2, .02, 6, 16), mat(0x3e2723), 0, .44, 0, g).rotation.x = Math.PI / 2; } } },
 ];
 // Chỗ của từng người trên tàu (toạ độ trong group tàu, boong ở y=1).
 const SPOT = { Zoro: [.5, 7.35, 0], Sanji: [-1.6, 1, 1.1], Nami: [-1.6, 1, -1.1], Usopp: [4.2, 1, -.9], Franky: [4.2, 1, .9], Chopper: [2.7, 1, 1.15], Robin: [2.7, 1, -1.15], Brook: [-3.9, 2.6, .8], Jinbe: [-2.75, 2.6, 0] };
@@ -76,10 +112,11 @@ const SPOT = { Zoro: [.5, 7.35, 0], Sanji: [-1.6, 1, 1.1], Nami: [-1.6, 1, -1.1]
 function build() {
   const host = $('scene'), renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; host.appendChild(renderer.domElement);
-  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x8ec9ff, 30, 90);
+  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x8ec9ff, 40, 140);
   const cam = new THREE.PerspectiveCamera(45, 1, .1, 300); cam.position.set(11, 9, 15);
   const ctl = new OrbitControls(cam, renderer.domElement); ctl.target.set(0, 3, 0); ctl.enableDamping = true;
-  ctl.maxPolarAngle = Math.PI * .49; ctl.minDistance = 6; ctl.maxDistance = 45;
+  { const c = new URLSearchParams(location.search).get('cam'); if (c) { const v = c.split(',').map(Number); cam.position.set(v[0], v[1], v[2]); ctl.target.set(v[3], v[4], v[5]); } } // ?cam=x,y,z,tx,ty,tz để chụp cận
+  ctl.maxPolarAngle = Math.PI * .49; ctl.minDistance = 6; ctl.maxDistance = 70;
   const hemi = new THREE.HemisphereLight(0xdfefff, 0x1d3b52, 1); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(12, 20, 8); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14 }); scene.add(sun);
@@ -132,30 +169,70 @@ function build() {
     const lb = label(2.3); lb.position.set(x, y + 2.1, z); ship.add(lb); return { ...c, g, lb, jobs: [] }; });
   crew.find(c => c.name === 'Zoro').g.rotation.y = 0;
   // thuyền trưởng Luffy (owner) ngồi trên đầu sư tử
-  const luffy = person({ shirt: 0xd62f2f, pants: 0x3d6fb6, legs: 0xf1c9a5, hair: 0x111111, extra: hatStraw }); luffy.position.set(6.1, 2.65, 0); luffy.rotation.y = Math.PI / 2; ship.add(luffy);
+  const luffy = person({ shirt: 0xf1c9a5, pants: 0x3d6fb6, legs: 0xf1c9a5, shoes: 0xc58b3c, hair: 0x111111, hairCap: .4, grin: true, extra: g => { spikes(g, 0x111111, 10, .14, 1.0); hatStraw(g);
+    for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(.13, .34, .37), mat(0xd62f2f), s * .12, .66, 0, g);                 // áo gile đỏ mở
+    mesh(new THREE.CylinderGeometry(.2, .2, .08, 14), mat(0xf6c344), 0, .5, 0, g);                                        // đai vàng
+    mesh(new THREE.BoxGeometry(.06, .012, .01), mat(0x7a2b2b), -.1, H - .07, R - .02, g); } });                         // sẹo dưới mắt luffy.position.set(6.1, 2.65, 0); luffy.rotation.y = Math.PI / 2; ship.add(luffy);
   const luffyLb = label(2.2); luffyLb.position.set(6.1, 4.6, 0); ship.add(luffyLb); luffyLb.set('👒 Thuyền trưởng Luffy', 'Percy · giám đốc CutCut', '#e9c46a');
   // 3 sếp
   const queenie = person({ shirt: 0xb3202a, pants: 0xb3202a, legs: 0x222222, hair: 0x5a3825, extra: g => {
     longHair(0x5a3825)(g); mesh(new THREE.ConeGeometry(.33, .45, 16, 1, true), mat(0xb3202a, { side: THREE.DoubleSide }), 0, .4, 0, g);
-    const hat = mesh(new THREE.CylinderGeometry(.08, .08, .7, 3), mat(0x151515), 0, 1.34, 0, g); hat.rotation.z = Math.PI / 2; hat.scale.set(1, 1, 2.6);
-    mesh(new THREE.SphereGeometry(.05, 8, 6), mat(0xffffff), 0, 1.36, .14, g); for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(.14, .04, .12), mat(0xffc107, { metalness: .7 }), s * .2, .83, 0, g); } });
+    const hat = mesh(new THREE.CylinderGeometry(.08, .08, .7, 3), mat(0x151515), 0, H + .3, 0, g); hat.rotation.z = Math.PI / 2; hat.scale.set(1, 1, 2.6);
+    mesh(new THREE.SphereGeometry(.05, 8, 6), mat(0xffffff), 0, H + .32, .16, g); for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(.14, .04, .12), mat(0xffc107, { metalness: .7 }), s * .2, .83, 0, g); } });
   queenie.position.set(-3.9, 2.65, -.75); queenie.rotation.y = Math.PI / 2; queenie.scale.setScalar(1.1); ship.add(queenie);
   const iron = person({ skin: 0xb3151b, shirt: 0xb3151b, pants: 0xb3151b, legs: 0xb3151b, arms: 0xb3151b, eyes: false, hair: null, extra: g => {
-    mesh(new THREE.SphereGeometry(.2, 16, 12, -Math.PI / 2, Math.PI, 0, Math.PI), mat(0xe0b13a, { metalness: .8, roughness: .3 }), 0, 1.04, .05, g);
-    for (const x of [-.08, .08]) mesh(new THREE.BoxGeometry(.08, .025, .02), glow(0xe0ffff), x, 1.09, .24, g);
+    const face = mesh(new THREE.SphereGeometry(R * .82, 16, 12), mat(0xe0b13a, { metalness: .8, roughness: .3 }), 0, H - .02, R * .5, g); face.scale.set(1, 1.1, .55);
+    for (const s of [-1, 1]) mesh(new THREE.SphereGeometry(.12, 12, 10), mat(0xb3151b, { metalness: .6, roughness: .35 }), s * .27, .82, 0, g);
+    for (const x of [-.08, .08]) mesh(new THREE.BoxGeometry(.08, .025, .02), glow(0xe0ffff), x, H + .03, R + .01, g);
     mesh(new THREE.CircleGeometry(.06, 16), glow(0x7df9ff), 0, .7, .19, g);
     for (const x of [-.09, .09]) mesh(new THREE.ConeGeometry(.06, .3, 8), new THREE.MeshBasicMaterial({ color: 0x9ff6ff, transparent: true, opacity: .8 }), x, -.15, 0, g).rotation.x = Math.PI; } });
   iron.scale.setScalar(1.25); scene.add(iron);
   const webT = canvasTex(256, 128); { const g = webT.g; g.fillStyle = '#c62828'; g.fillRect(0, 0, 256, 128); g.strokeStyle = '#222'; g.lineWidth = 2; for (let i = 0; i < 16; i++) { g.beginPath(); g.moveTo(64, 64); g.lineTo(64 + Math.cos(i / 8 * Math.PI) * 200, 64 + Math.sin(i / 8 * Math.PI) * 200); g.stroke(); } for (let r = 12; r < 200; r += 16) { g.beginPath(); g.arc(64, 64, r, 0, 7); g.stroke(); } webT.t.needsUpdate = true; }
   const spidey = person({ head: 0xc62828, skin: 0xc62828, shirt: 0xc62828, pants: 0x1f4fb3, legs: 0x1f4fb3, arms: 0xc62828, eyes: false, hair: null, extra: g => {
     g.userData.head.material = new THREE.MeshStandardMaterial({ map: webT.t, roughness: .6 });
-    for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(.07, 12, 8), mat(0xffffff), s * .09, 1.1, .19, g); e.scale.set(1, 1.4, .4); e.rotation.z = s * .5; }
+    for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(.07, 12, 8), mat(0xffffff), s * .1, H + .03, R - .04, g); e.scale.set(1.1, 1.5, .4); e.rotation.z = s * .5; const o = mesh(new THREE.SphereGeometry(.082, 12, 8), mat(0x111111), s * .1, H + .03, R - .055, g); o.scale.set(1.1, 1.5, .4); o.rotation.z = s * .5; }
     mesh(new THREE.SphereGeometry(.05, 8, 6), mat(0x111111), 0, .72, .19, g); } });
   const spiderRig = new THREE.Group(); spiderRig.position.set(.5, 6.2, 1.9); ship.add(spiderRig);
   spidey.rotation.x = Math.PI; spidey.position.y = -.4; spiderRig.add(spidey); spidey.scale.setScalar(1.1);
   mesh(new THREE.CylinderGeometry(.008, .008, .5, 4), mat(0xffffff), 0, -.2, 0, spiderRig);
   const bossLb = {}; for (const n of ['Captain Queenie', 'Iron Man', 'Spider Man']) { const lb = label(2.5); bossLb[n] = lb; (n === 'Spider Man' ? spiderRig : n === 'Iron Man' ? scene : ship).add(lb); }
   bossLb['Captain Queenie'].position.set(-3.9, 4.75, -.75); bossLb['Spider Man'].position.set(0, .45, 0);
+
+  // ---------- đảo, tàu khác, thuỷ quái ----------
+  const palm = (p, x, z, h) => { const tr = new THREE.Group(); tr.position.set(x, 0, z); p.add(tr);
+    for (let i = 0; i < 5; i++) { const s = mesh(new THREE.CylinderGeometry(.13 - i * .015, .15 - i * .015, h / 5, 7), mat(0x8d6e63), i * .12, h / 10 + i * h / 5, 0, tr); s.rotation.z = -.12; }
+    for (let i = 0; i < 6; i++) { const lf = mesh(new THREE.BoxGeometry(1.6, .04, .38), mat(0x2e7d32), .6, h, 0, tr); lf.geometry.translate(.8, 0, 0); lf.position.x = .6; lf.rotation.set(0, i / 6 * Math.PI * 2, -.35); } };
+  const island = (x, z, r, kind) => { const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    const sand = mesh(new THREE.SphereGeometry(r, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat(0xf2d49b), 0, -.4, 0, g); sand.scale.y = .25;
+    if (kind === 'skull') { const sk = mesh(new THREE.SphereGeometry(r * .55, 18, 14), mat(0xd7ccc8), 0, r * .55, 0, g); for (const s of [-1, 1]) mesh(new THREE.SphereGeometry(r * .14, 10, 8), mat(0x212121), s * r * .2, r * .62, r * .45, g); mesh(new THREE.BoxGeometry(r * .5, r * .2, r * .4), mat(0xd7ccc8), 0, r * .15, r * .25, g); }
+    else if (kind === 'volcano') { mesh(new THREE.ConeGeometry(r * .7, r * 1.1, 10), mat(0x5d4037, { flatShading: true }), 0, r * .5, 0, g); mesh(new THREE.SphereGeometry(r * .18, 10, 8), glow(0xff5722), 0, r * 1.02, 0, g); }
+    else { mesh(new THREE.DodecahedronGeometry(r * .55), mat(0x43a047, { flatShading: true }), 0, r * .2, 0, g).scale.y = .7; for (let i = 0; i < 4; i++) palm(g, Math.cos(i * 1.7) * r * .55, Math.sin(i * 1.7) * r * .55, 3 + i % 2); } };
+  island(-34, -26, 7, 'palm'); island(38, -32, 9, 'volcano'); island(30, 34, 6, 'palm'); island(-46, 28, 8, 'skull'); island(4, -55, 10, 'palm');
+
+  const otherShip = (hull, sailC, flagDraw) => { const g = new THREE.Group(); scene.add(g);
+    mesh(new THREE.BoxGeometry(6, 1.4, 2), mat(hull), 0, .2, 0, g); mesh(new THREE.ConeGeometry(1, 1.8, 4), mat(hull), 3.6, .2, 0, g).rotation.z = -Math.PI / 2;
+    for (const x of [-1.3, 1.2]) { mesh(new THREE.CylinderGeometry(.1, .12, 5, 8), mat(0x6d4c41), x, 3, 0, g); const sl = canvasTex(256, 192); flagDraw(sl.g, sailC); sl.t.needsUpdate = true;
+      mesh(new THREE.PlaneGeometry(2.4, 1.9), new THREE.MeshStandardMaterial({ map: sl.t, side: THREE.DoubleSide }), x + .1, 3.1, 0, g).rotation.y = Math.PI / 2; }
+    return g; };
+  const marine = otherShip(0xf5f5f5, '#ffffff', (g, c) => { g.fillStyle = c; g.fillRect(0, 0, 256, 192); g.fillStyle = '#1565c0'; g.fillRect(0, 150, 256, 20); g.font = '700 34px system-ui'; g.textAlign = 'center'; g.fillText('MARINE', 128, 130);
+    g.strokeStyle = '#1565c0'; g.lineWidth = 8; g.beginPath(); g.moveTo(70, 70); g.quadraticCurveTo(100, 30, 128, 70); g.quadraticCurveTo(156, 30, 186, 70); g.stroke(); });
+  const rival = otherShip(0x3e2723, '#1b1b1b', (g, c) => { g.fillStyle = c; g.fillRect(0, 0, 256, 192); g.fillStyle = '#fff'; g.beginPath(); g.arc(128, 90, 34, 0, 7); g.fill();
+    g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(115, 86, 8, 0, 7); g.arc(141, 86, 8, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 10; g.beginPath(); g.moveTo(80, 150); g.lineTo(176, 40); g.stroke(); });
+
+  // thuỷ quái (Hải Vương): chuỗi đốt nhô lên khỏi mặt nước
+  const seaKing = new THREE.Group(); scene.add(seaKing);
+  const segs = []; for (let i = 0; i < 14; i++) { const r = .95 - i * .045; const s = mesh(new THREE.SphereGeometry(r, 14, 10), mat(i % 2 ? 0x8e44ad : 0x9b59b6), 0, 0, 0, seaKing);
+    if (i > 0) mesh(new THREE.ConeGeometry(.18, .7, 5), mat(0xf39c12), 0, r * .9, 0, s); segs.push(s); }
+  const kHead = segs[0];
+  for (const s of [-1, 1]) { mesh(new THREE.SphereGeometry(.2, 10, 8), mat(0xfff59d), .55, .35, s * .5, kHead); mesh(new THREE.SphereGeometry(.09, 8, 6), mat(0x111111), .7, .37, s * .55, kHead); }
+  const jaw = mesh(new THREE.BoxGeometry(1.1, .2, .8), mat(0x6c3483), .7, -.35, 0, kHead);
+  for (let i = 0; i < 4; i++) mesh(new THREE.ConeGeometry(.05, .2, 4), mat(0xffffff), .5 + i * .18, -.15, .3 - (i % 2) * .6, kHead).rotation.x = Math.PI;
+  const world = t => {
+    marine.position.set(Math.cos(t * .03) * 30, .2 + .2 * Math.sin(t * 1.1), Math.sin(t * .03) * 30); marine.rotation.y = -t * .03 - Math.PI / 2; marine.rotation.z = .04 * Math.sin(t);
+    rival.position.set(Math.cos(-t * .022 + 2) * 40, .2 + .2 * Math.sin(t * .9), Math.sin(-t * .022 + 2) * 40); rival.rotation.y = t * .022 - 2 + Math.PI / 2;
+    const a = t * .06, cx = Math.cos(a) * 14, cz = Math.sin(a) * 14, dir = new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)), side = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
+    segs.forEach((s, i) => { const k = i * 1.05; s.position.set(cx - dir.x * k + side.x * Math.sin(t * 1.4 - i * .45) * .6, 1.6 * Math.sin(t * 1.2 - i * .55) - .2, cz - dir.z * k + side.z * Math.sin(t * 1.4 - i * .45) * .6); });
+    kHead.rotation.y = -a - Math.PI / 2; kHead.position.y += .6; jaw.rotation.z = -.25 - .25 * Math.sin(t * 3); };
 
   // thùng hàng = việc chờ
   const crates = []; for (let i = 0; i < 24; i++) { const c = mesh(new THREE.BoxGeometry(.42, .42, .42), mat(0xa0723c), 1.35 + (i % 3) * .45, 1.21 + Math.floor(i / 6) * .43, -.45 + (Math.floor(i / 3) % 2) * .9, ship); c.rotation.y = (i * 37 % 10) / 40; crates.push(c); }
@@ -199,7 +276,7 @@ function build() {
     for (let i = fireworks.length - 1; i >= 0; i--) { const f = fireworks[i]; f.t += dt; const a = f.p.geometry.attributes.position;
       f.vel.forEach((v, k) => { v.y -= 1.5 * dt; a.array[k * 3] += v.x * dt; a.array[k * 3 + 1] += v.y * dt; a.array[k * 3 + 2] += v.z * dt; }); a.needsUpdate = true; f.p.material.opacity = Math.max(0, 1 - f.t / 2.2);
       if (f.t > 2.2) { scene.remove(f.p); f.p.geometry.dispose(); fireworks.splice(i, 1); } }
-    ctl.update(); renderer.render(scene, cam);
+    world(t); ctl.update(); renderer.render(scene, cam);
   });
   return { crew, bossLb, crates, boats, gold, chestLbl, burst };
 }
