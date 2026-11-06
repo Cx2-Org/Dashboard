@@ -57,7 +57,7 @@ main{display:flex;flex-wrap:wrap;gap:34px 30px;justify-content:center;align-item
 .quota{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:6px 16px 0;max-width:1500px;margin:0 auto}
 .q{background:#14161a;border:1px solid var(--line);border-radius:14px;padding:10px 14px;min-width:230px;flex:1;max-width:330px}
 .q .n{font-weight:700;display:flex;justify-content:space-between;align-items:center}.q .n span{font-weight:400;color:var(--mut);font-size:12px}
-.q .l{display:flex;justify-content:space-between;font-size:12px;color:#cfd3da;margin-top:7px}.q .b{height:7px;background:#23262c;border-radius:4px;overflow:hidden;margin-top:3px}.q .b i{display:block;height:100%;border-radius:4px}
+.q .l{display:flex;justify-content:space-between;font-size:12px;color:#cfd3da;margin-top:7px}.q .rs{color:var(--mut)}.q .l b{color:#fff}.q .b{height:7px;background:#23262c;border-radius:4px;overflow:hidden;margin-top:3px}.q .b i{display:block;height:100%;border-radius:4px}
 .empty{color:var(--mut);padding:60px 0;text-align:center;width:100%}
 body{overflow-x:hidden}@media (max-width:520px){main{gap:22px 12px}.dev{zoom:.74}}
 </style></head><body>
@@ -98,12 +98,17 @@ function device(d) {
 }
 let last = null;
 const qcol = v => v >= .85 ? '#f08a80' : v >= .6 ? '#f0b54a' : '#5BE316';
-function quota(s) { const q = s.quota || {}; const vn = h => { const d = new Date(), x = (d.getUTCHours() + 7) % 24; return x >= 7 && x < 18; };
+// Giờ reset: "21:26 · còn 1g20" (hôm nay) hoặc "T5 14:00 · còn 2 ngày"; đồng hồ đếm ngược chạy mỗi phút.
+const resetTxt = ep => { if (!ep) return ''; const d = new Date(ep * 1000), m = Math.max(0, Math.round((d - Date.now()) / 60000));
+  const hm = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }), same = d.toDateString() === new Date().toDateString();
+  const day = same ? '' : ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d.getDay()] + ' ';
+  return `↻ ${day}${hm} · còn ${m < 60 ? m + ' phút' : m < 1440 ? Math.floor(m / 60) + 'g' + String(m % 60).padStart(2, '0') : Math.round(m / 1440) + ' ngày'}`; };
+function quota(s) { const q = s.quota || {}; const vn = () => { const x = (new Date().getUTCHours() + 7) % 24; return x >= 7 && x < 18; };
   document.getElementById('quota').innerHTML = Object.keys(BOT).map(name => { const v = q[name] || {}, [ic, bn] = BOT[name];
-    const row = (lbl, x) => x == null ? `<div class="l"><span>${lbl}</span><span>–</span></div>` : `<div class="l"><span>${lbl}</span><span>${Math.round(x * 100)}%</span></div><div class="b"><i style="width:${Math.min(100, x * 100)}%;background:${qcol(x)}"></i></div>`;
-    const rs = v.reset5 ? new Date(v.reset5 * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
+    const row = (lbl, x, ep) => x == null ? `<div class="l"><span>${lbl}</span><span>–</span></div>`
+      : `<div class="l"><span>${lbl} <b>${Math.round(x * 100)}%</b></span><span class="rs">${resetTxt(ep)}</span></div><div class="b"><i style="width:${Math.min(100, x * 100)}%;background:${qcol(x)}"></i></div>`;
     const paused = v.h5 != null && v.h5 >= .85 && vn();
-    return `<div class="q"><div class="n">${ic} ${esc(bn)}<span>${paused ? '⏸ nghỉ giờ hành chính' : rs ? 'reset ' + rs : ''}</span></div>${row('Phiên 5 giờ', v.h5)}${row('7 ngày', v.d7)}</div>`; }).join(''); }
+    return `<div class="q"><div class="n">${ic} ${esc(bn)}<span>${paused ? '⏸ nghỉ giờ hành chính' : v.h5 != null ? '▶ đang chạy' : ''}</span></div>${row('Phiên 5 giờ', v.h5, v.reset5)}${row('7 ngày', v.d7, v.reset7)}</div>`; }).join(''); }
 function render(s) {
   last = s; quota(s);
   const jobs = s.bots.flatMap(b => b.jobs.map(j => ({ ...j, bot: b.name })));
@@ -122,7 +127,8 @@ async function refresh() {
 }
 function demo() { const t = m => new Date(Date.now() - m * 60e3).toISOString(), j = (number, code, platform, text, done, total) => ({ number, code, platform, phase: { text }, progress: { done, total }, model: 'opus' });
   return { at: new Date().toISOString(), bots: [{ name: 'Captain Queenie', jobs: [j(86, 'WI1', 'ios', 'Đang chạy test', 2, 3), j(175, 'Q04', 'windows', 'Đang code', 1, 3)] }, { name: 'Iron Man', jobs: [j(85, 'WA1', 'android', 'Đang chạy app', 1, 3), j(79, 'MF1', 'mac', 'Đang chạy test', 2, 3)] }, { name: 'Spider Man', jobs: [j(74, 'P02', 'linux', 'Đang code', 0, 2)] }],
-    quota: { 'Captain Queenie': { h5: .31, d7: .22, reset5: Date.now() / 1000 + 5400 }, 'Iron Man': { h5: .88, d7: .61, reset5: Date.now() / 1000 + 2400 }, 'Spider Man': { h5: .05, d7: .4, reset5: Date.now() / 1000 + 12000 } },
+    quota: { 'Captain Queenie': { h5: .31, d7: .22, reset5: Date.now() / 1000 + 5400, reset7: Date.now() / 1000 + 86400 * 2.3 }, 'Iron Man': { h5: .88, d7: .61, reset5: Date.now() / 1000 + 2400, reset7: Date.now() / 1000 + 86400 * 4 }, 'Spider Man': { h5: .05, d7: .4, reset5: Date.now() / 1000 + 12000, reset7: Date.now() / 1000 + 86400 * 0.5 } },
     machines: [{ issue: 86, os: 'macos-15-intel', status: 'in_progress', startedAt: t(42) }, { issue: 85, os: 'ubuntu-latest', status: 'in_progress', startedAt: t(95) }, { issue: 79, os: 'macos-15-intel', status: 'in_progress', startedAt: t(130) }, { issue: 175, os: 'windows-latest', status: 'in_progress', startedAt: t(18) }, { issue: 74, os: 'ubuntu-latest', status: 'in_progress', startedAt: t(7) }, { issue: 91, os: 'macos-15-intel', status: 'queued' }] }; }
-refresh(); setInterval(refresh, 30000); setInterval(() => last && document.querySelector('.term') && render(last), 4000); // chạy tiếp log giả, không tải lại mạng
+refresh(); setInterval(refresh, 30000); setInterval(() => last && document.querySelector('.term') && render(last), 4000);
+setInterval(() => last && quota(last), 60000); // đếm ngược reset // chạy tiếp log giả, không tải lại mạng
 </script></body></html>
